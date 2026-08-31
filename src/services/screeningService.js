@@ -12,7 +12,7 @@ export class UnauthorizedError extends Error {
 
 // Use Vite environment variables with fallbacks for development
 const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || 'http://localhost:8000'
-const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:5000'
+const BACKEND_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://retina-backend-1.onrender.com';
 
 const PREDICT_URL = `${AI_BASE_URL}/predict`
 const API_URL = `${BACKEND_BASE_URL}/api`
