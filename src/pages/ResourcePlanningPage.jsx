@@ -1,0 +1,264 @@
+import { AlertTriangle, Info, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useTranslation } from '../context/LanguageContext'
+
+const scenarioData = [
+  {
+    scenario: 'Baseline',
+    reviewers: 1,
+    peakArrivalRate: '50/hr',
+    maxQueueLength: 0,
+    maxWaitTime: '0 min',
+    reviewUtilization: '—',
+  },
+  {
+    scenario: 'Peak Load',
+    reviewers: 1,
+    peakArrivalRate: '200/hr',
+    maxQueueLength: 320,
+    maxWaitTime: '160 min',
+    reviewUtilization: '—',
+    isViolation: true,
+  },
+  {
+    scenario: 'Peak Load',
+    reviewers: 2,
+    peakArrivalRate: '200/hr',
+    maxQueueLength: 0,
+    maxWaitTime: '0 min',
+    reviewUtilization: '—',
+  },
+  {
+    scenario: 'Peak Load',
+    reviewers: 3,
+    peakArrivalRate: '200/hr',
+    maxQueueLength: 0,
+    maxWaitTime: '0 min',
+    reviewUtilization: '—',
+  },
+]
+
+const simulationCharts = [
+  {
+    filename: 'simulation_baseline_50_per_hr_1_reviewer.png',
+    title: 'Baseline — 50/hr, 1 Reviewer',
+    caption: 'Baseline — 50 images/hour with 1 reviewer; no meaningful queue develops.',
+  },
+  {
+    filename: 'simulation_burst_500_per_hr_1_reviewer.png',
+    title: 'Burst Load — 500/hr, 1 Reviewer',
+    caption: 'Burst Load — 500 images/hour with 1 reviewer; demonstrates severe temporary reviewer overload.',
+  },
+  {
+    filename: 'simulation_diurnal_pattern_2_reviewers.png',
+    title: 'Diurnal Pattern — 2 Reviewers',
+    caption: 'Diurnal Pattern — 2 reviewers handling changing arrival demand across the simulated period.',
+  },
+  {
+    filename: 'simulation_high_load_100_per_hr_1_reviewer.png',
+    title: 'High Load — 100/hr, 1 Reviewer',
+    caption: 'High Load — 100 images/hour with 1 reviewer; demonstrates reviewer capacity under sustained higher demand.',
+  },
+  {
+    filename: 'simulation_peak_200_per_hr_1_reviewer.png',
+    title: 'Peak Load — 200/hr, 1 Reviewer',
+    caption: 'Peak Load — 200 images/hour with 1 reviewer; severe queue and wait-time buildup, violating the 30-minute SLA.',
+  },
+  {
+    filename: 'simulation_peak_200_per_hr_2_reviewers.png',
+    title: 'Peak Load — 200/hr, 2 Reviewers',
+    caption: 'Peak Load — 200 images/hour with 2 reviewers; queue is eliminated in the supplied simulation result.',
+  },
+  {
+    filename: 'simulation_peak_200_per_hr_3_reviewers.png',
+    title: 'Peak Load — 200/hr, 3 Reviewers',
+    caption: 'Peak Load — 200 images/hour with 3 reviewers; queue is eliminated with additional reviewer capacity.',
+  },
+]
+
+function ResourcePlanningPage() {
+  const { t } = useTranslation()
+  const [selectedChart, setSelectedChart] = useState(null)
+
+  useEffect(() => {
+    if (!selectedChart) return
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setSelectedChart(null)
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = ''
+    }
+  }, [selectedChart])
+
+  return (
+    <div className="mx-auto w-full max-w-[1280px]">
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-[26px] font-semibold tracking-[-0.025em] text-ink">{t('resource.title')}</h2>
+          <p className="mt-1 text-[14px] text-muted">
+            {t('resource.subtitle')}
+          </p>
+        </div>
+        <span className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-warning bg-[#fff8e8] rounded-full">
+          <Info size={12} strokeWidth={2} aria-hidden="true" />
+          {t('resource.simulationResults')}
+        </span>
+      </header>
+
+      {/* Key Finding Banner */}
+      <section className="mt-8">
+        <div
+          className="border border-accent bg-accent-soft px-6 py-5 rounded-lg"
+          role="alert"
+        >
+          <div className="flex items-start gap-4">
+            <div className="shrink-0 flex size-10 items-center justify-center rounded-full bg-accent/20 text-accent">
+              <AlertTriangle size={20} strokeWidth={1.8} aria-hidden="true" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-[16px] font-semibold text-ink">
+                {t('resource.keyFinding')}
+              </h3>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Comparison Table */}
+      <section className="mt-10">
+        <h3 className="text-[18px] font-semibold tracking-[-0.015em] text-ink">{t('resource.comparisonTitle')}</h3>
+        <p className="mt-1 text-[14px] text-muted">
+          {t('resource.comparisonSub')}
+        </p>
+
+        <div className="mt-4 overflow-hidden border border-line bg-panel shadow-[0_1px_3px_rgba(32,42,49,0.04)] rounded-lg">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] border-collapse text-left">
+              <thead className="border-b border-line bg-surface">
+                <tr className="text-[11px] font-semibold uppercase tracking-[0.07em] text-muted">
+                  <th className="px-6 py-3.5">{t('resource.tableHeaders.scenario')}</th>
+                  <th className="px-6 py-3.5 text-center">{t('resource.tableHeaders.reviewers')}</th>
+                  <th className="px-6 py-3.5 text-center">{t('resource.tableHeaders.arrivalRate')}</th>
+                  <th className="px-6 py-3.5 text-center">{t('resource.tableHeaders.queueLength')}</th>
+                  <th className="px-6 py-3.5 text-center">{t('resource.tableHeaders.waitTime')}</th>
+                  <th className="px-6 py-3.5 text-center">{t('resource.tableHeaders.utilization')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {scenarioData.map((row, index) => (
+                  <tr
+                    key={index}
+                    className={`text-[14px] text-ink ${
+                      row.isViolation ? 'bg-[#fdf0f0]' : ''
+                    }`}
+                  >
+                    <td className="whitespace-nowrap px-6 py-4 font-medium">{row.scenario}</td>
+                    <td className="whitespace-nowrap px-6 py-4 text-center text-muted">{row.reviewers}</td>
+                    <td className="whitespace-nowrap px-6 py-4 text-center text-muted">{row.peakArrivalRate}</td>
+                    <td className={`whitespace-nowrap px-6 py-4 text-center font-mono ${
+                      row.maxQueueLength > 0 ? 'text-danger font-semibold' : 'text-success'
+                    }`}>
+                      {row.maxQueueLength}
+                    </td>
+                    <td className={`whitespace-nowrap px-6 py-4 text-center font-mono ${
+                      row.maxWaitTime !== '0 min' ? 'text-danger font-semibold' : 'text-success'
+                    }`}>
+                      {row.maxWaitTime}
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4 text-center text-muted">{row.reviewUtilization}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* SLA Note */}
+        <div className="mt-4 flex items-start gap-3 px-1">
+          <div className="shrink-0 flex size-8 items-center justify-center rounded-full bg-warning/15 text-warning">
+            <Info size={15} strokeWidth={1.8} aria-hidden="true" />
+          </div>
+          <div className="pt-0.5">
+            <p className="text-[14px] font-medium text-ink">
+              {t('resource.slaNote')}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Chart Gallery */}
+      <section className="mt-10">
+        <h3 className="text-[18px] font-semibold tracking-[-0.015em] text-ink">{t('resource.vizTitle')}</h3>
+        <p className="mt-1 text-[14px] text-muted">
+          {t('resource.vizSub')}
+        </p>
+
+        <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {simulationCharts.map((chart, index) => (
+            <article
+              key={index}
+              onClick={() => setSelectedChart(chart)}
+              className="border border-line bg-panel rounded-lg overflow-hidden shadow-[0_1px_3px_rgba(32,42,49,0.04)] cursor-pointer transition-colors hover:border-accent"
+            >
+              <div className="relative aspect-video bg-surface">
+                <img
+                  src={`/assets/${chart.filename}`}
+                  alt={chart.title}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <div className="p-4">
+                <p className="text-[14px] font-semibold text-ink">{chart.title}</p>
+                <p className="mt-1 text-[13px] text-muted">{chart.caption}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {selectedChart && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm transition-opacity duration-300 ease-in-out animate-in fade-in"
+          onClick={() => setSelectedChart(null)}
+        >
+          <div
+            className="relative max-w-5xl w-full bg-panel rounded-xl overflow-hidden shadow-2xl transition-all duration-300 ease-out animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+              onClick={() => setSelectedChart(null)}
+              aria-label={t('resource.closeModal')}
+            >
+              <X size={20} />
+            </button>
+
+            <div className="p-2 bg-surface">
+              <img
+                src={`/assets/${selectedChart.filename}`}
+                alt={selectedChart.title}
+                className="w-full h-auto max-h-[80vh] object-contain block mx-auto"
+              />
+            </div>
+
+            <div className="p-6">
+              <h3 className="text-[20px] font-semibold text-ink">{selectedChart.title}</h3>
+              <p className="mt-2 text-[15px] text-muted leading-relaxed">
+                {selectedChart.caption}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default ResourcePlanningPage
